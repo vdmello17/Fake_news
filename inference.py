@@ -4,14 +4,13 @@ import re
 from collections import Counter
 import numpy as np
 import os
-import urllib.request
 import gdown
 
 # -------------------- Preprocessing --------------------
 def tokenize(text):
     return re.sub(r"[^\w\s]", "", text.lower()).split()
 
-# Dummy sample text list to create vocab (replace this with real vocab loading)
+# Dummy sample text list to create vocab (replace with actual vocab if available)
 sample_texts = ["the president said this is not true", "cnn reported fake news"]
 tokenized = [tokenize(text) for text in sample_texts]
 counter = Counter(token for tokens in tokenized for token in tokens)
@@ -21,7 +20,8 @@ vocab.update({word: i + 2 for i, (word, _) in enumerate(counter.items())})
 
 def encode(tokens, max_len=100):
     ids = [vocab.get(token, vocab["<unk>"]) for token in tokens]
-    return ids[:max_len]
+    padded = ids[:max_len] + [0] * (max_len - len(ids))
+    return padded
 
 # -------------------- Model Classes --------------------
 class Attention(nn.Module):
@@ -64,37 +64,26 @@ class LSTMWithMetadataAttention(nn.Module):
         return self.fc(self.dropout(combined))
 
 # -------------------- Load Embeddings and Model --------------------
-# Dummy embedding matrix for testing – replace with your saved one
 embed_dim = 100
 embed_matrix = torch.tensor(np.random.normal(scale=0.6, size=(len(vocab), embed_dim)), dtype=torch.float32)
 
 model = LSTMWithMetadataAttention(
     vocab_size=len(vocab),
-    job_size=14,          # hardcoded from training
-    party_size=6,         # hardcoded from training
-    context_size=14,      # hardcoded from training
+    job_size=14,
+    party_size=6,
+    context_size=14,
     embed_matrix=embed_matrix
 )
 
-
 MODEL_PATH = "fake_news_model.pth"
-MODEL_URL = "https://drive.google.com/uc?id=1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6"  # Only ID is used by gdown
+MODEL_URL = "https://drive.google.com/uc?id=1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6"
 
-if os.path.exists(MODEL_PATH):
-    os.remove(MODEL_PATH)
-
-    gdown.download(id="1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6", output=MODEL_PATH, quiet=False)
-
-# Confirm it's not HTML
-with open(MODEL_PATH, "rb") as f:
-    start = f.read(1)
-    if start == b"<":
-        raise ValueError("Downloaded file is HTML, not a model. Check Google Drive permissions or use a different host.")
-
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model...")
+    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
 model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
-
 
 # -------------------- Prediction Function --------------------
 def predict_fake_news(statement, job, party, context):
