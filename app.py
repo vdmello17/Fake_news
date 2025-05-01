@@ -20,7 +20,8 @@ if st.button("Check Authenticity"):
         st.warning("Please enter a statement before prediction.")
     else:
         try:
-            prediction, probabilities = predict_fake_news(statement, job, party, context)
+            prediction, probabilities = predict_fake_news(statement)
+
             label = '🟥 Fake' if prediction == 1 else '🟩 Real'
             confidence = float(torch.max(torch.tensor(probabilities)))
             st.subheader(f"Prediction: {label}")
