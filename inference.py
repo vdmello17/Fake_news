@@ -9,7 +9,19 @@ Original file is located at
 
 import torch
 import torch.nn as nn
-from preprocessing import tokenize, encode, vocab  # reuse preprocessing functions from training
+import re
+from collections import Counter
+vocab = {"<pad>": 0, "<unk>": 1}
+vocab.update({word: i + 2 for i, (word, _) in enumerate(counter.items())})
+
+
+def tokenize(text):
+    return re.sub(r"[^\w\s]", "", text.lower()).split()
+
+def encode(tokens, max_len=100):
+    ids = [vocab.get(token, vocab["<unk>"]) for token in tokens]
+    return ids[:max_len]
+
 
 class LSTMWithMetadataAttention(nn.Module):
     # Define exactly as in your training notebook.
