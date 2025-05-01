@@ -5,4 +5,4 @@ pandas
 scikit-learn
 nltk
 gdown
-
+transformers==4.5.1
