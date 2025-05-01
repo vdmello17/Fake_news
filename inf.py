@@ -95,15 +95,37 @@ model.eval()
 # -------------------- Prediction Function --------------------
 
 
+#def predict_fake_news(statement, job, party, context):
+ #   tokens = torch.tensor([encode(tokenize(statement))])
+   # length = torch.tensor([len(tokens[0])])
+    #job_tensor = torch.tensor([job])
+    #party_tensor = torch.tensor([party])
+   # context_tensor = torch.tensor([context])
+    #print("Input tokens:", tokens)
+    #print("Job:", job, "| Party:", party, "| Context:", context)
+    #print("Probabilities:", prob)
 def predict_fake_news(statement, job, party, context):
-    tokens = torch.tensor([encode(tokenize(statement))])
-    length = torch.tensor([len(tokens[0])])
-    job_tensor = torch.tensor([job])
-    party_tensor = torch.tensor([party])
-    context_tensor = torch.tensor([context])
-    print("Input tokens:", tokens)
-    print("Job:", job, "| Party:", party, "| Context:", context)
-    print("Probabilities:", prob)
+    try:
+        token_ids = encode(tokenize(statement))
+        if not token_ids:
+            raise ValueError("Token list is empty after encoding.")
+
+        tokens = torch.tensor([token_ids])
+        length = torch.tensor([len(token_ids)])
+        job_tensor = torch.tensor([job])
+        party_tensor = torch.tensor([party])
+        context_tensor = torch.tensor([context])
+
+        with torch.no_grad():
+            output = model(tokens, length, job_tensor, party_tensor, context_tensor)
+            prob = torch.softmax(output, dim=1)
+            prediction = torch.argmax(prob, dim=1).item()
+
+        return prediction, prob.numpy()
+
+    except Exception as e:
+        print(f"Prediction error: {e}")
+        raise
 
     with torch.no_grad():
         output = model(tokens, length, job_tensor, party_tensor, context_tensor)
