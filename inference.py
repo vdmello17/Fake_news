@@ -10,14 +10,21 @@ Original file is located at
 import torch
 import torch.nn as nn
 import re
+from collections import Counter
+
+def tokenize(text):
+    return re.sub(r"[^\w\s]", "", text.lower()).split()
+
+# Dummy sample text list for vocabulary building
+# In practice, load your real vocab or vocab.pkl
+sample_texts = ["the president said this is not true", "cnn reported fake news"]
+
+# Build vocab
+tokenized = [tokenize(text) for text in sample_texts]
 counter = Counter(token for tokens in tokenized for token in tokens)
 
 vocab = {"<pad>": 0, "<unk>": 1}
 vocab.update({word: i + 2 for i, (word, _) in enumerate(counter.items())})
-
-
-def tokenize(text):
-    return re.sub(r"[^\w\s]", "", text.lower()).split()
 
 def encode(tokens, max_len=100):
     ids = [vocab.get(token, vocab["<unk>"]) for token in tokens]
