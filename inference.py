@@ -80,9 +80,17 @@ model = LSTMWithMetadataAttention(
 MODEL_PATH = "fake_news_model.pth"
 MODEL_URL = "https://drive.google.com/uc?id=1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6"  # Only ID is used by gdown
 
-if not os.path.exists(MODEL_PATH):
-    print("Downloading model...")
-    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+if os.path.exists(MODEL_PATH):
+    os.remove(MODEL_PATH)
+
+    gdown.download(id="1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6", output=MODEL_PATH, quiet=False)
+
+# Confirm it's not HTML
+with open(MODEL_PATH, "rb") as f:
+    start = f.read(1)
+    if start == b"<":
+        raise ValueError("Downloaded file is HTML, not a model. Check Google Drive permissions or use a different host.")
+
 
 model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
