@@ -1,9 +1,9 @@
 streamlit
-torch
 numpy
 pandas
 scikit-learn
 nltk
-predict_fake_news
 preprocessing
 counter
+torch==2.1.2
+
