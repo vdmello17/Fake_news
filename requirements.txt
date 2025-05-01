@@ -6,3 +6,4 @@ scikit-learn
 nltk
 urllib.request
 os
+gdown
