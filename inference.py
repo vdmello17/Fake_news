@@ -1,96 +1,28 @@
 import torch
-import torch.nn as nn
-import re
-import numpy as np
-import os
-import gdown
-import json
+from transformers import BertTokenizer, BertForSequenceClassification
 
-# -------------------- Load Vocab --------------------
-with open("vocab.json", "r") as f:
-    vocab = json.load(f)
-vocab = {word: int(idx) for word, idx in vocab.items()}
+# -------------------- Load Model & Tokenizer --------------------
+MODEL_PATH = "bert_fakenews_model.pth"  # Your saved .pth file
+PRETRAINED_MODEL = "bert-base-uncased"
 
-# -------------------- Preprocessing --------------------
-def tokenize(text):
-    return re.sub(r"[^\w\s]", "", text.lower()).split()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def encode(tokens, max_len=100):
-    ids = [vocab.get(token, vocab["<unk>"]) for token in tokens]
-    return ids[:max_len] + [0] * (max_len - len(ids))  # pad to max_len
-
-# -------------------- Model Classes --------------------
-class Attention(nn.Module):
-    def __init__(self, hidden_dim):
-        super().__init__()
-        self.attn = nn.Linear(hidden_dim * 2, 1)
-
-    def forward(self, lstm_out, lengths):
-        scores = self.attn(lstm_out).squeeze(-1)
-        mask = torch.arange(lstm_out.size(1)).unsqueeze(0) >= lengths.unsqueeze(1)
-        mask = mask.to(lstm_out.device)
-        scores = scores.masked_fill(mask, -1e9)
-        weights = torch.softmax(scores, dim=1)
-        context = torch.bmm(weights.unsqueeze(1), lstm_out).squeeze(1)
-        return context
-
-class LSTMWithMetadataAttention(nn.Module):
-    def __init__(self, vocab_size, job_size, party_size, context_size, embed_matrix, embed_dim=100, hidden_dim=128):
-        super().__init__()
-        self.embed_text = nn.Embedding.from_pretrained(embed_matrix, freeze=False, padding_idx=0)
-        self.embed_job = nn.Embedding(job_size, 16)
-        self.embed_party = nn.Embedding(party_size, 8)
-        self.embed_context = nn.Embedding(context_size, 8)
-
-        self.lstm = nn.LSTM(embed_dim, hidden_dim, batch_first=True, bidirectional=True)
-        self.attention = Attention(hidden_dim)
-        self.dropout = nn.Dropout(0.5)
-        self.fc = nn.Linear(hidden_dim * 2 + 16 + 8 + 8, 2)
-
-    def forward(self, x, lengths, job_id, party_id, context_id):
-        x = self.embed_text(x)
-        packed = nn.utils.rnn.pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-        out, _ = self.lstm(packed)
-        out, _ = nn.utils.rnn.pad_packed_sequence(out, batch_first=True)
-        text_feat = self.attention(out, lengths)
-        job_embed = self.embed_job(job_id)
-        party_embed = self.embed_party(party_id)
-        context_embed = self.embed_context(context_id)
-        combined = torch.cat([text_feat, job_embed, party_embed, context_embed], dim=1)
-        return self.fc(self.dropout(combined))
-
-# -------------------- Load Embeddings and Model --------------------
-embed_dim = 100
-embed_matrix = torch.tensor(np.random.normal(scale=0.6, size=(len(vocab), embed_dim)), dtype=torch.float32)
-
-model = LSTMWithMetadataAttention(
-    vocab_size=len(vocab),
-    job_size=14,
-    party_size=6,
-    context_size=14,
-    embed_matrix=embed_matrix
-)
-
-MODEL_PATH = "fake_news_model.pth"
-MODEL_URL = "https://drive.google.com/uc?id=1kVA5l0bO-oRE08y4RK9LcWVMg32BocyC"
-
-if not os.path.exists(MODEL_PATH):
-    print("Downloading model...")
-    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-
-model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
+# Load tokenizer and model
+tokenizer = BertTokenizer.from_pretrained(PRETRAINED_MODEL)
+model = BertForSequenceClassification.from_pretrained(PRETRAINED_MODEL, num_labels=2)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+model.to(device)
 model.eval()
 
 # -------------------- Prediction Function --------------------
-def predict_fake_news(statement, job, party, context):
-    tokens = torch.tensor([encode(tokenize(statement))])
-    length = torch.tensor([len(tokens[0])])
-    job_tensor = torch.tensor([job])
-    party_tensor = torch.tensor([party])
-    context_tensor = torch.tensor([context])
+def predict_fake_news(statement):
+    encoding = tokenizer(statement, padding=True, truncation=True, max_length=128, return_tensors="pt")
+    encoding = {k: v.to(device) for k, v in encoding.items()}
 
     with torch.no_grad():
-        output = model(tokens, length, job_tensor, party_tensor, context_tensor)
-        prob = torch.softmax(output, dim=1)
-        prediction = torch.argmax(prob, dim=1).item()
-    return prediction, prob.numpy()
+        outputs = model(**encoding)
+        logits = outputs.logits
+        probs = torch.softmax(logits, dim=1)
+        pred = torch.argmax(probs, dim=1).item()
+    
+    return pred, probs.cpu().numpy()
