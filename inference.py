@@ -78,7 +78,8 @@ model = LSTMWithMetadataAttention(
 
 
 MODEL_PATH = "fake_news_model.pth"
-MODEL_URL = "https://drive.google.com/file/d/1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6/view?usp=sharing"  # Replace with a direct download link
+MODEL_URL = "MODEL_URL = "https://drive.google.com/uc?export=download&id=YOUR_FILE_ID"
+"  # Replace with a direct download link
 
 if not os.path.exists(MODEL_PATH):
     print("Downloading model...")
