@@ -68,11 +68,19 @@ class LSTMWithMetadataAttention(nn.Module):
 # -------------------- Load Model --------------------
 model = LSTMWithMetadataAttention(
     vocab_size=len(vocab),
-    job_size=14,
-    party_size=6,
-    context_size=14,
+    job_size=1178,
+    party_size=22,
+    context_size=2784,
     embed_matrix=embed_matrix
 )
+
+#model = LSTMWithMetadataAttention(
+ #   vocab_size=len(vocab),
+  #  job_size=14,
+   # party_size=6,
+    #context_size=14,
+    #embed_matrix=embed_matrix
+#)
 
 MODEL_PATH = "fake_news_model.pth"
 MODEL_URL = "https://drive.google.com/uc?id=1kVA5l0bO-oRE08y4RK9LcWVMg32BocyC"
