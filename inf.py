@@ -93,12 +93,17 @@ model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 model.eval()
 
 # -------------------- Prediction Function --------------------
+
+
 def predict_fake_news(statement, job, party, context):
     tokens = torch.tensor([encode(tokenize(statement))])
     length = torch.tensor([len(tokens[0])])
     job_tensor = torch.tensor([job])
     party_tensor = torch.tensor([party])
     context_tensor = torch.tensor([context])
+    print("Input tokens:", tokens)
+    print("Job:", job, "| Party:", party, "| Context:", context)
+    print("Probabilities:", prob)
 
     with torch.no_grad():
         output = model(tokens, length, job_tensor, party_tensor, context_tensor)
