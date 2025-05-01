@@ -1,4 +1,5 @@
 import torch
+pip install transformers
 from transformers import BertTokenizer, BertForSequenceClassification
 
 # -------------------- Load Model & Tokenizer --------------------
