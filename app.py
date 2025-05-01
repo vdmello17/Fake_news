@@ -3,7 +3,7 @@ import torch
 
 # Safely try to import the prediction function
 try:
-    from inf import predict_fake_news
+    from inference import predict_fake_news
 except ImportError as e:
     st.error(f"Failed to import inference module: {e}")
     st.stop()
