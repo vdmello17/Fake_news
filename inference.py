@@ -10,20 +10,20 @@ import gdown
 def tokenize(text):
     return re.sub(r"[^\w\s]", "", text.lower()).split()
 
-# Dummy sample text list to create vocab (replace with actual vocab if available)
-sample_texts = ["the president said this is not true", "cnn reported fake news"]
-tokenized = [tokenize(text) for text in sample_texts]
+tokenized = [tokenize(text) for text in X_text]
 counter = Counter(token for tokens in tokenized for token in tokens)
-
 vocab = {"<pad>": 0, "<unk>": 1}
 vocab.update({word: i + 2 for i, (word, _) in enumerate(counter.items())})
-
+def tokenize(text):
+    return re.sub(r"[^\w\s]", "", text.lower()).split()
 def encode(tokens, max_len=100):
     ids = [vocab.get(token, vocab["<unk>"]) for token in tokens]
-    padded = ids[:max_len] + [0] * (max_len - len(ids))
-    return padded
+    return ids[:max_len]
+
+
 
 # -------------------- Model Classes --------------------
+
 class Attention(nn.Module):
     def __init__(self, hidden_dim):
         super().__init__()
@@ -63,9 +63,6 @@ class LSTMWithMetadataAttention(nn.Module):
         combined = torch.cat([text_feat, job_embed, party_embed, context_embed], dim=1)
         return self.fc(self.dropout(combined))
 
-# -------------------- Load Embeddings and Model --------------------
-embed_dim = 100
-embed_matrix = torch.tensor(np.random.normal(scale=0.6, size=(len(vocab), embed_dim)), dtype=torch.float32)
 
 model = LSTMWithMetadataAttention(
     vocab_size=len(vocab),
