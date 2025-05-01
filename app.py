@@ -1,6 +1,6 @@
 import streamlit as st
 import torch
-from inference import predict_fake_news
+from script import predict_fake_news
 
 st.title("Fake News Detector")
 
