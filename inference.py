@@ -5,6 +5,7 @@ from collections import Counter
 import numpy as np
 import os
 import urllib.request
+import gdown
 
 # -------------------- Preprocessing --------------------
 def tokenize(text):
@@ -76,18 +77,16 @@ model = LSTMWithMetadataAttention(
 )
 
 
-
 MODEL_PATH = "fake_news_model.pth"
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6" # Replace with a direct download link
+MODEL_URL = "https://drive.google.com/uc?id=1OqcWVx2BOnBIixfiE4PxUwbP2Dp4Xr_6"  # Only ID is used by gdown
 
 if not os.path.exists(MODEL_PATH):
     print("Downloading model...")
-    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+    gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
 model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
-
-model.load_state_dict(torch.load("fake_news_model.pth", map_location=torch.device("cpu")))
 model.eval()
+
 
 # -------------------- Prediction Function --------------------
 def predict_fake_news(statement, job, party, context):
