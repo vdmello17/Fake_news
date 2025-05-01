@@ -65,16 +65,12 @@ class LSTMWithMetadataAttention(nn.Module):
 embed_dim = 100
 embed_matrix = torch.tensor(np.random.normal(scale=0.6, size=(len(vocab), embed_dim)), dtype=torch.float32)
 
-# Replace with actual values if you know them
-job_size = 10
-party_size = 5
-context_size = 8
 
 model = LSTMWithMetadataAttention(
     vocab_size=len(vocab),
-    job_size=job_size,
-    party_size=party_size,
-    context_size=context_size,
+    job_size=df["job_encoded"].nunique(),
+    party_size=df["party_encoded"].nunique(),
+    context_size=df["context_encoded"].nunique(),
     embed_matrix=embed_matrix
 )
 
