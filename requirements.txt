@@ -4,3 +4,4 @@ numpy
 pandas
 scikit-learn
 nltk
+predict_fake_news
