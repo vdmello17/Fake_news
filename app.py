@@ -25,7 +25,7 @@ if st.button("Check Authenticity"):
                 int(party),
                 int(context)
             )
-            label = '🟥 Fake' if prediction == 1 else '🟩 Real'
+            label = '🟥 Fake' if prediction == 0 else '🟩 Real'
             confidence = float(torch.max(torch.tensor(probabilities)))
             st.subheader(f"Prediction: {label}")
             st.write(f"Confidence: **{confidence:.2f}**")
