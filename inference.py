@@ -10,7 +10,8 @@ Original file is located at
 import torch
 import torch.nn as nn
 import re
-from collections import Counter
+counter = Counter(token for tokens in tokenized for token in tokens)
+
 vocab = {"<pad>": 0, "<unk>": 1}
 vocab.update({word: i + 2 for i, (word, _) in enumerate(counter.items())})
 
