@@ -14,14 +14,17 @@ statement = st.text_area("Enter News Statement:")
 job = st.number_input("Job ID:", min_value=0, max_value=13, step=1)
 party = st.number_input("Party ID:", min_value=0, max_value=5, step=1)
 context = st.number_input("Context ID:", min_value=0, max_value=13, step=1)
-
 if st.button("Check Authenticity"):
     if statement.strip() == "":
         st.warning("Please enter a statement before prediction.")
     else:
         try:
-            prediction, probabilities = predict_fake_news(statement)
-
+            prediction, probabilities = predict_fake_news(
+                statement,
+                int(job),
+                int(party),
+                int(context)
+            )
             label = '🟥 Fake' if prediction == 1 else '🟩 Real'
             confidence = float(torch.max(torch.tensor(probabilities)))
             st.subheader(f"Prediction: {label}")
