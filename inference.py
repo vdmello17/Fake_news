@@ -3,6 +3,8 @@ import torch.nn as nn
 import re
 from collections import Counter
 import numpy as np
+import os
+import urllib.request
 
 # -------------------- Preprocessing --------------------
 def tokenize(text):
@@ -72,6 +74,17 @@ model = LSTMWithMetadataAttention(
     context_size=14,      # hardcoded from training
     embed_matrix=embed_matrix
 )
+
+
+
+MODEL_PATH = "fake_news_model.pth"
+MODEL_URL = "https://YOUR_FILE_LINK_HERE"  # Replace with a direct download link
+
+if not os.path.exists(MODEL_PATH):
+    print("Downloading model...")
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+
+model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device("cpu")))
 
 model.load_state_dict(torch.load("fake_news_model.pth", map_location=torch.device("cpu")))
 model.eval()
