@@ -32,7 +32,7 @@ class LSTMWithAttention(nn.Module):
         return self.fc(context), attn_weights
 
 # 2) Load tokenizer, embedding matrix, and model
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_components():
     # Load tokenizer JSON
     with open("tokenizer.json", "r", encoding="utf-8") as f:
