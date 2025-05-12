@@ -4,16 +4,11 @@ import torch.nn as nn
 import numpy as np
 import json
 import pandas as pd
-
-# Import pad_sequences and tokenizer_from_json with fallback
-try:
-    from tensorflow.keras.preprocessing.sequence import pad_sequences
-    from tensorflow.keras.preprocessing.text import tokenizer_from_json
-except ModuleNotFoundError:
-    from keras_preprocessing.sequence import pad_sequences
-    from keras_preprocessing.text import tokenizer_from_json
-
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from tensorflow.keras.preprocessing.text import tokenizer_from_json
+
+# Set max sequence length (must match training)
+MAX_LEN = 100
 
 # 1) Define the LSTMWithAttention model class
 class LSTMWithAttention(nn.Module):
@@ -39,17 +34,18 @@ class LSTMWithAttention(nn.Module):
 # 2) Load tokenizer, embedding matrix, and model
 @st.cache(allow_output_mutation=True)
 def load_components():
-    # Load tokenizer
+    # Load tokenizer JSON
     with open("tokenizer.json", "r", encoding="utf-8") as f:
         tok_json = f.read()
     tokenizer = tokenizer_from_json(tok_json)
 
-    # Load embedding matrix and model
+    # Load embedding matrix and determine dims
     embed_matrix = np.load("glove_embedding_matrix.npy")
     vocab_size, embed_dim = embed_matrix.shape
-    hidden_dim = 128  # must match training
-    output_dim = 2    # adjust if more classes
 
+    # Instantiate and load model (must match training args)
+    hidden_dim = 128
+    output_dim = 2
     model = LSTMWithAttention(vocab_size, embed_dim, hidden_dim, output_dim, embed_matrix)
     model.load_state_dict(torch.load("model.pth", map_location="cpu"))
     model.eval()
@@ -62,24 +58,26 @@ tokenizer, model = load_components()
 st.title("📰 Fake News Detector")
 input_text = st.text_area("Paste text to classify:")
 if st.button("Classify") and input_text:
-    # Preprocess input
-    seq = tokenizer.texts_to_sequences([input_text])
-    lengths = [len(seq[0])]
-    padded = pad_sequences(seq, maxlen=100, padding="post")
-    input_tensor = torch.tensor(padded, dtype=torch.long)
-    length_tensor = torch.tensor(lengths, dtype=torch.long)
+    # Tokenize and pad/truncate manually
+    seq = tokenizer.texts_to_sequences([input_text])[0]
+    length = min(len(seq), MAX_LEN)
+    if length < MAX_LEN:
+        seq = seq + [0] * (MAX_LEN - length)
+    else:
+        seq = seq[:MAX_LEN]
+    input_tensor = torch.tensor([seq], dtype=torch.long)
+    length_tensor = torch.tensor([length], dtype=torch.long)
 
     # Predict
     with torch.no_grad():
         logits, attn_weights = model(input_tensor, length_tensor)
     pred = logits.argmax(dim=1).item()
     label = "Fake" if pred == 1 else "Real"
-
     st.subheader(f"Prediction: {label}")
 
     # Attention visualization
     attn = attn_weights.squeeze(0).cpu().numpy()
-    words = input_text.split()[: len(attn)]
-    df_attn = pd.DataFrame({"word": words, "weight": attn})
+    words = input_text.split()[:length]
+    df_attn = pd.DataFrame({"word": words, "weight": attn[:length]})
     st.write("**Attention weights**")
     st.bar_chart(df_attn.set_index("word"))
