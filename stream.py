@@ -82,7 +82,7 @@ if st.button("Classify") and input_text:
     st.write(f"**Probability Fake:** {probs[1]:.2f}")
     # Determine label by argmax
     pred = logits.argmax(dim=1).item()
-    label = "Fake" if pred == 1 else "Real"
+    label = "Fake" if pred == 0 else "Real"
     st.subheader(f"Prediction: {label}")
     # Attention visualization
     attn = attn_weights.squeeze(0).cpu().numpy()
