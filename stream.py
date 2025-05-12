@@ -57,35 +57,8 @@ tokenizer, model = load_components()
 # 3) Streamlit UI
 st.title("📰 Fake News Detector")
 # Add threshold slider for tuning sensitivity on Fake class
-threshold = st.slider("Fake probability threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.05)
-input_text = st.text_area("Paste text to classify:")
-if st.button("Classify") and input_text:
-    # Tokenize and pad/truncate manually
-    seq = tokenizer.texts_to_sequences([input_text])[0]
-    length = min(len(seq), MAX_LEN)
-    if length < MAX_LEN:
-        seq = seq + [0] * (MAX_LEN - length)
-    else:
-        seq = seq[:MAX_LEN]
-    input_tensor = torch.tensor([seq], dtype=torch.long)
-    length_tensor = torch.tensor([length], dtype=torch.long)
-
-    # Predict
-    with torch.no_grad():
-        logits, attn_weights = model(input_tensor, length_tensor)
-    # Compute probabilities
-    probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-    # Display probabilities
-    st.write(f"**Probability Real:** {probs[0]:.2f}")
-    st.write(f"**Probability Fake:** {probs[1]:.2f}")
-
-    # Apply threshold to determine label
-    label = "Fake" if probs[1] >= threshold else "Real"
-    st.subheader(f"Prediction: {label} (threshold: {threshold:.2f})")
-
-    # Attention visualization
-    attn = attn_weights.squeeze(0).cpu().numpy()
-    words = input_text.split()[:length]
-    df_attn = pd.DataFrame({"word": words, "weight": attn[:length]})
-    st.write("**Attention weights**")
-    st.bar_chart(df_attn.set_index("word"))
+st.write("Adjust the threshold for classifying 'Fake'. If the Fake probability is above this value, the prediction will be 'Fake'.")
+threshold = st.slider(
+    "Fake probability threshold", min_value=0.0, max_value=1.0,
+    value=0.5, step=0.01
+)
