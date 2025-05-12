@@ -6,4 +6,5 @@ scikit-learn
 nltk
 gdown
 transformers==4.39.3
-
+tensorflow
+keras-preprocessing
