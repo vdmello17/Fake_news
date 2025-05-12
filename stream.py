@@ -71,7 +71,14 @@ if st.button("Classify") and input_text:
     # Predict
     with torch.no_grad():
         logits, attn_weights = model(input_tensor, length_tensor)
+    # Compute probabilities
+    probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+    # Display probabilities for transparency
+    st.write(f"**Probability Real:** {probs[0]:.2f}")
+    st.write(f"**Probability Fake:** {probs[1]:.2f}")
+
     pred = logits.argmax(dim=1).item()
+    # Map prediction to label
     label = "Fake" if pred == 1 else "Real"
     st.subheader(f"Prediction: {label}")
 
