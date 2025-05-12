@@ -54,12 +54,6 @@ tokenizer, model = load_components()
 
 # 3) Streamlit UI
 st.title("📰 Fake News Detector")
-# Threshold for Fake class
-st.write("Adjust the threshold for classifying 'Fake'. If the Fake probability is above this value, the prediction will be 'Fake'.")
-threshold = st.slider(
-    "Fake probability threshold", min_value=0.0, max_value=1.0,
-    value=0.5, step=0.01
-)
 
 # Optional: display training details
 with st.expander("Training Details"):
@@ -86,10 +80,11 @@ if st.button("Classify") and input_text:
     probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
     st.write(f"**Probability Real:** {probs[0]:.2f}")
     st.write(f"**Probability Fake:** {probs[1]:.2f}")
-    # Apply threshold
-    label = "Fake" if probs[1] >= threshold else "Real"
-    st.subheader(f"Prediction: {label} (threshold: {threshold:.2f})")
-    # Attention
+    # Determine label by argmax
+    pred = logits.argmax(dim=1).item()
+    label = "Fake" if pred == 1 else "Real"
+    st.subheader(f"Prediction: {label}")
+    # Attention visualization
     attn = attn_weights.squeeze(0).cpu().numpy()
     words = input_text.split()[:length]
     df_attn = pd.DataFrame({"word": words, "weight": attn[:length]})
