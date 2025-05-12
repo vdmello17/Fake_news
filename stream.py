@@ -38,12 +38,10 @@ def load_components():
     with open("tokenizer.json", "r", encoding="utf-8") as f:
         tok_json = f.read()
     tokenizer = tokenizer_from_json(tok_json)
-
-    # Load embedding matrix and determine dims
+    # Load embedding matrix
     embed_matrix = np.load("glove_embedding_matrix.npy")
     vocab_size, embed_dim = embed_matrix.shape
-
-    # Instantiate and load model (must match training args)
+    # Instantiate and load model
     hidden_dim = 128
     output_dim = 2
     model = LSTMWithAttention(vocab_size, embed_dim, hidden_dim, output_dim, embed_matrix)
@@ -56,9 +54,44 @@ tokenizer, model = load_components()
 
 # 3) Streamlit UI
 st.title("📰 Fake News Detector")
-# Add threshold slider for tuning sensitivity on Fake class
+# Threshold for Fake class
 st.write("Adjust the threshold for classifying 'Fake'. If the Fake probability is above this value, the prediction will be 'Fake'.")
 threshold = st.slider(
     "Fake probability threshold", min_value=0.0, max_value=1.0,
     value=0.5, step=0.01
 )
+
+# Optional: display training details
+with st.expander("Training Details"):
+    st.write("**Model Architecture:** Bi-directional LSTM with attention")
+    st.write(f"Embedding dimension: {model.embedding.embedding_dim}")
+    st.write(f"Hidden dimension: 128")
+    st.write(f"Output classes: 2 (Real, Fake)")
+    st.write(f"Max sequence length: {MAX_LEN}")
+    st.write("**Training parameters:** 5 epochs, batch size 32, learning rate 1e-3")
+
+# Input and classification
+input_text = st.text_area("Paste text to classify:")
+if st.button("Classify") and input_text:
+    # Tokenize and pad/truncate manually
+    seq = tokenizer.texts_to_sequences([input_text])[0]
+    length = min(len(seq), MAX_LEN)
+    seq = seq[:length] + [0] * (MAX_LEN - length)
+    input_tensor = torch.tensor([seq], dtype=torch.long)
+    length_tensor = torch.tensor([length], dtype=torch.long)
+    # Predict
+    with torch.no_grad():
+        logits, attn_weights = model(input_tensor, length_tensor)
+    # Compute probabilities
+    probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
+    st.write(f"**Probability Real:** {probs[0]:.2f}")
+    st.write(f"**Probability Fake:** {probs[1]:.2f}")
+    # Apply threshold
+    label = "Fake" if probs[1] >= threshold else "Real"
+    st.subheader(f"Prediction: {label} (threshold: {threshold:.2f})")
+    # Attention
+    attn = attn_weights.squeeze(0).cpu().numpy()
+    words = input_text.split()[:length]
+    df_attn = pd.DataFrame({"word": words, "weight": attn[:length]})
+    st.write("**Attention weights**")
+    st.bar_chart(df_attn.set_index("word"))
